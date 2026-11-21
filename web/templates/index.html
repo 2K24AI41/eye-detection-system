@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Eye Detection System</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <main>
+    <h1>Eye Detection System</h1>
+
+    <div class="preview">
+      <img id="video" alt="Live camera preview" hidden>
+      <p id="placeholder">Camera is off</p>
+    </div>
+
+    <div class="controls">
+      <button id="start" type="button">Start Camera</button>
+      <button id="stop" type="button" disabled>Stop Camera</button>
+      <span class="status"><span id="dot" class="dot stopped"></span><span id="state">Stopped</span></span>
+    </div>
+
+    <p id="message" class="message" role="status"></p>
+
+    <dl class="info">
+      <div><dt>Faces</dt><dd id="faces">0</dd></div>
+      <div><dt>Eyes</dt><dd id="eyes">0</dd></div>
+      <div><dt>FPS</dt><dd id="fps">0.0</dd></div>
+    </dl>
+  </main>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

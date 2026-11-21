@@ -3,3 +3,25 @@ __pycache__/
 *.pyc
 .vscode/
 output/
+dataset/
+
+# Local environments and secrets (an example file may be committed)
+.env
+.env.*
+!.env.example
+venv/
+env/
+
+# Editor, tool and test artifacts
+.idea/
+.claude/
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+*.log
+
+# Operating-system files
+Thumbs.db
+desktop.ini
+.DS_Store
