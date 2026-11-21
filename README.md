@@ -2,12 +2,21 @@
 
 A university Computer Vision mini project. The program reads live video from a
 webcam, finds faces, then finds eyes inside each face, and draws boxes on the
-live video together with the measured FPS.
+live video together with the measured FPS. The same detection also runs in a local
+Flask web interface, and the project includes tools for a small evaluation dataset
+(capture, de-duplication, blind manual annotation and label validation).
 
-**Important:** detection uses the **pre-trained Haar Cascade XML classifiers that
-ship with OpenCV** (`haarcascade_frontalface_default.xml` and
-`haarcascade_eye.xml`). **No model was trained in this project** and no dataset
-was collected or used for training.
+**Important:** Detection uses the **pre-trained Haar Cascade XML classifiers supplied
+with OpenCV** (`haarcascade_frontalface_default.xml` and `haarcascade_eye.xml`).
+**No model was trained in this project.** A small webcam dataset was collected
+exclusively to evaluate the existing classifiers; it was not used for training.
+
+## Demo
+
+![Demo of real-time webcam-based eye detection](docs/demo.gif)
+
+*The Flask web interface (`python app.py`): starting the camera, real-time face (green) and
+eye (blue) detection on the live webcam video, then stopping the camera.*
 
 ## Objectives
 - Capture real-time video from a webcam with OpenCV.
@@ -73,14 +82,21 @@ There is deliberately no minimum-width rule: it was tested and wrongly removed a
 genuine small eye detection.
 
 ## Installation
-Run these commands from the project folder (the folder that contains this README):
+Requirements: Windows with **Python 3.10** and a **webcam**. For the first-time setup,
+run these commands in PowerShell from the project folder (the folder that contains this
+README):
 ```powershell
 cd path\to\eye-detection-system
+python -m venv .venv
 .\.venv\Scripts\activate
 pip install -r requirements.txt
 python scripts\check_environment.py
 ```
-`check_environment.py` prints the versions and confirms both cascade files load.
+`python -m venv .venv` creates the virtual environment once; in a new terminal, only the
+`cd` and `activate` lines are needed. If PowerShell refuses to run the activation script,
+run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` once, or use
+`.venv\Scripts\activate.bat` in Command Prompt. `check_environment.py` prints the versions
+and confirms both cascade files load.
 
 ## Run
 ```powershell
@@ -88,6 +104,10 @@ python main.py
 ```
 Press **Q** to quit. If the webcam cannot be opened, or a cascade file is
 missing/invalid, the program prints a clear error message and exits.
+
+If the webcam cannot be opened, check that Windows allows it (**Settings → Privacy &
+security → Camera**: camera access and "Let desktop apps access your camera" switched on)
+and close other applications that may be using it, such as video-call apps.
 
 ## Web-Based Eye Detection Interface
 
@@ -108,13 +128,12 @@ and the drawing helpers from `src/` unchanged; `main.py` is not used or modified
   statistics fit without scrolling. There is no phone or tablet layout, and it has not
   been tested on those devices.
 
-### Installation
-Flask is listed in `requirements.txt`, so the normal installation is enough (from the
-project folder):
+### Web interface installation
+Flask is listed in `requirements.txt`, so the setup under "Installation" above is enough.
+In a new terminal, activate the environment from the project folder:
 ```powershell
 cd path\to\eye-detection-system
 .\.venv\Scripts\activate
-pip install -r requirements.txt
 ```
 
 ### Run and stop
@@ -127,16 +146,8 @@ with **Ctrl+C** in the terminal; the camera is released on exit. The server list
 reloader switched off on purpose (the reloader would start a second process and open the
 webcam twice).
 
-### Project structure (web files)
-```
-app.py                          # Flask app: routes and security checks, run with python app.py
-src/web_camera_service.py       # DetectionService: the single camera worker thread
-web/templates/index.html        # The page
-web/static/css/style.css        # Dark theme and desktop layout
-web/static/js/app.js            # Buttons, status polling, video stream handling
-tests/test_web_camera_service.py        # Service and route tests (fake camera)
-tests/test_web_phase11_regressions.py   # Regression tests for the Phase 1.1 fixes
-```
+The web files (`app.py`, `src/web_camera_service.py`, `web/` and the two web test files)
+are listed under "Project structure" below.
 
 ### Flask routes
 | Route | Purpose |
@@ -219,7 +230,7 @@ not exercised there.
 
 ## Dataset capture (Milestone 5 evaluation)
 `scripts/capture_dataset.py` records the evaluation images defined in
-`docs/EVALUATION_PROTOCOL.md`. It only saves 640x480 PNG images and a metadata
+[`docs/EVALUATION_PROTOCOL.md`](docs/EVALUATION_PROTOCOL.md). It only saves 640x480 PNG images and a metadata
 CSV inside the Git-ignored `dataset/` folder; it does not run the detector.
 ```powershell
 python scripts\capture_dataset.py --status     # progress table, no camera
@@ -231,8 +242,8 @@ and **Q** or **ESC** to quit. Conditions: `normal, dim, strong, turn, tilt, dist
 glasses, bg`.
 
 **The collection is complete and frozen.** The 125 images in `dataset/images/` and their
-rows in `dataset/metadata.csv` are the final dataset (`docs/EVALUATION_PROTOCOL.md`,
-section 6.6). The commands above describe how it was collected; they are not meant to be
+rows in `dataset/metadata.csv` are the final dataset
+([`docs/EVALUATION_PROTOCOL.md`](docs/EVALUATION_PROTOCOL.md), section 6.6). The commands above describe how it was collected; they are not meant to be
 run again to add, replace or retake images of this dataset. `--status` only reads.
 
 Safety behaviour:
@@ -266,8 +277,8 @@ Safety behaviour:
 
 ## De-duplicated evaluation subset (Milestone 6)
 Many consecutive dataset images are near-identical, so results are reported on the full
-dataset **and** on a de-duplicated subset (details in `docs/EVALUATION_PROTOCOL.md`,
-section 11). The approved rule is pixel-similarity only: 64x48 grayscale, grouped by
+dataset **and** on a de-duplicated subset (details in
+[`docs/EVALUATION_PROTOCOL.md`](docs/EVALUATION_PROTOCOL.md), section 11). The approved rule is pixel-similarity only: 64x48 grayscale, grouped by
 recorded condition and sub-condition, new cluster when the mean absolute difference to the
 cluster's first image exceeds 2.5, earliest image kept. It gives 73 representatives (68
 person images, 5 background images) out of 125 images; nothing is deleted.
@@ -365,7 +376,7 @@ pair, but their contents cannot be verified, because they have no checksums.
 ```
 eye-detection-system/
 ├── main.py                     # Entry point: webcam loop, drawing, FPS, quit on Q
-├── app.py                      # Flask web interface entry point (python app.py)
+├── app.py                      # Flask web interface: routes and security checks (python app.py)
 ├── requirements.txt            # opencv-python>=4.10,<5, numpy and flask>=3,<4
 ├── README.md                   # This file
 ├── .gitignore                  # Ignores .venv, __pycache__ / *.pyc, .vscode, output, dataset,
@@ -382,7 +393,8 @@ eye-detection-system/
 │   ├── annotate_dataset.py     # Blind manual ground-truth annotation tool (OpenCV)
 │   └── validate_labels.py      # Read-only validation of the annotation files
 ├── docs/
-│   └── EVALUATION_PROTOCOL.md  # Evaluation plan for Milestone 5
+│   ├── EVALUATION_PROTOCOL.md  # Evaluation protocol: dataset capture, de-duplication, annotation
+│   └── demo.gif                # README demo of the web interface
 ├── web/
 │   ├── templates/
 │   │   └── index.html          # The web page
@@ -416,8 +428,8 @@ eye-detection-system/
   and the total number of eye boxes from 128 to 122. This is a count of boxes,
   **not an accuracy measurement**.
 
-No accuracy, precision or recall has been measured, because no labelled
-evaluation data was created.
+Accuracy, precision and recall are not reported yet. These metrics require validated
+manual ground-truth annotations and a defined evaluation run.
 
 ## Limitations
 - All testing was done with **one person and one webcam under limited lighting
